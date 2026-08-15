@@ -1,6 +1,7 @@
 /** AR Quick Look helpers — this experience is intentionally iOS-only. */
 
 export const MODEL_PATH = "/models/robot.usdz";
+export const MODEL_TYPE = "model/vnd.usdz+zip";
 
 export function isIOS(): boolean {
   if (typeof navigator === "undefined") return false;
@@ -29,22 +30,41 @@ export function canLaunchAR(): boolean {
 }
 
 /**
- * Programmatically launches AR Quick Look with the USDZ model.
- * Must be called synchronously from a user gesture (tap / click).
+ * Reusable props for a real `<a rel="ar">` element. Directly tapping a
+ * genuine anchor is the most reliable way to open AR Quick Look across iOS
+ * versions (12–18+), including iOS 16 where synthetic clicks on hidden
+ * anchors are unreliable.
+ */
+export const arLinkProps = {
+  rel: "ar",
+  type: MODEL_TYPE,
+  href: MODEL_PATH,
+} as const;
+
+/**
+ * Programmatic fallback: opens AR Quick Look with the USDZ model. Must be
+ * called synchronously from a user gesture (tap / click). Uses a single
+ * persistent anchor parked off-screen instead of a `display:none` element —
+ * iOS 16 ignores clicks on display:none anchors, but an off-screen anchor
+ * with real dimensions is treated as a normal clickable link.
  * Returns false when the device can't run Quick Look.
  */
+let arAnchor: HTMLAnchorElement | null = null;
+
 export function launchQuickLook(): boolean {
   if (!canLaunchAR()) return false;
   try {
-    const a = document.createElement("a");
-    a.setAttribute("rel", "ar");
-    a.href = MODEL_PATH;
-    a.style.display = "none";
-    document.body.appendChild(a);
-    a.click();
-    // Defer removal: iOS can abort the Quick Look transition if the
-    // triggering anchor disappears from the DOM in the same tick.
-    window.setTimeout(() => a.remove(), 0);
+    if (!arAnchor) {
+      arAnchor = document.createElement("a");
+      arAnchor.rel = "ar";
+      arAnchor.type = MODEL_TYPE;
+      arAnchor.href = MODEL_PATH;
+      // Off-screen but not display:none — keeps the element clickable on iOS 16.
+      arAnchor.style.cssText =
+        "position:fixed;left:-9999px;top:0;width:1px;height:1px;opacity:0.01;pointer-events:none;";
+      document.body.appendChild(arAnchor);
+    }
+    arAnchor.click();
     return true;
   } catch {
     return false;

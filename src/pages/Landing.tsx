@@ -23,7 +23,12 @@ import {
 } from "@/components/ui/dialog";
 import { PhoneMockup } from "@/components/PhoneMockup";
 import { SoundtrackPicker } from "@/components/SoundtrackPicker";
-import { deviceState, guidanceFor, launchQuickLook } from "@/lib/ar";
+import {
+  arLinkProps,
+  canLaunchAR,
+  deviceState,
+  guidanceFor,
+} from "@/lib/ar";
 
 const fadeUp = {
   initial: { opacity: 0, y: 24 },
@@ -71,15 +76,21 @@ export default function Landing() {
   const [helpOpen, setHelpOpen] = useState(false);
   const guidance = guidanceFor(deviceState());
 
-  const handleLaunch = () => {
-    if (launchQuickLook()) {
+  /**
+   * The CTA is a real `<a rel="ar">` anchor. On iOS the browser handles the
+   * tap natively (most reliable path, including iOS 16); everywhere else we
+   * intercept it and show the guidance dialog instead of downloading a USDZ.
+   */
+  const handleLaunchClick = (event: React.MouseEvent<HTMLAnchorElement>) => {
+    if (canLaunchAR()) {
       toast("Opening AR Quick Look…", {
         description: "Scan the floor, then tap to place the robot.",
         icon: <Scan className="size-4 text-primary" />,
       });
-    } else {
-      setHelpOpen(true);
+      return;
     }
+    event.preventDefault();
+    setHelpOpen(true);
   };
 
   return (
@@ -116,9 +127,11 @@ export default function Landing() {
               Requirements
             </a>
           </nav>
-          <Button size="sm" onClick={handleLaunch} className="gap-1.5">
-            Open in AR
-            <ArrowRight className="size-3.5" />
+          <Button asChild size="sm" className="gap-1.5">
+            <a {...arLinkProps} onClick={handleLaunchClick}>
+              Open in AR
+              <ArrowRight className="size-3.5" />
+            </a>
           </Button>
         </div>
       </header>
@@ -151,9 +164,11 @@ export default function Landing() {
             </p>
 
             <div className="mt-8 flex flex-wrap items-center gap-3">
-              <Button size="lg" onClick={handleLaunch} className="gap-2">
-                <Scan className="size-5" strokeWidth={2.2} />
-                Launch AR experience
+              <Button asChild size="lg" className="gap-2">
+                <a {...arLinkProps} onClick={handleLaunchClick}>
+                  <Scan className="size-5" strokeWidth={2.2} />
+                  Launch AR experience
+                </a>
               </Button>
               <Button
                 size="lg"
@@ -347,12 +362,14 @@ export default function Landing() {
             </p>
             <div className="mt-9 flex flex-wrap items-center justify-center gap-3">
               <Button
+                asChild
                 size="lg"
-                onClick={handleLaunch}
                 className="bg-white text-stone-950 shadow-xl shadow-black/30 hover:bg-stone-100"
               >
-                <Scan className="size-4" strokeWidth={2.2} />
-                Launch AR experience
+                <a {...arLinkProps} onClick={handleLaunchClick}>
+                  <Scan className="size-4" strokeWidth={2.2} />
+                  Launch AR experience
+                </a>
               </Button>
               <Button
                 size="lg"
@@ -422,18 +439,12 @@ export default function Landing() {
               Close
             </Button>
             <Button
-              onClick={() => {
-                setHelpOpen(false);
-                if (launchQuickLook()) {
-                  toast("Opening AR Quick Look…", {
-                    description: "Scan the floor, then tap to place the robot.",
-                  });
-                } else {
-                  setHelpOpen(true);
-                }
-              }}
+              asChild
+              onClick={() => setHelpOpen(false)}
             >
-              Retry on iPhone
+              <a {...arLinkProps} onClick={handleLaunchClick}>
+                Retry on iPhone
+              </a>
             </Button>
           </div>
         </DialogContent>
