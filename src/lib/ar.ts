@@ -42,7 +42,9 @@ export function launchQuickLook(): boolean {
     a.style.display = "none";
     document.body.appendChild(a);
     a.click();
-    a.remove();
+    // Defer removal: iOS can abort the Quick Look transition if the
+    // triggering anchor disappears from the DOM in the same tick.
+    window.setTimeout(() => a.remove(), 0);
     return true;
   } catch {
     return false;
