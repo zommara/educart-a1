@@ -1,0 +1,17 @@
+{
+  "name": "Diorama — Animated object in your space",
+  "short_name": "Diorama",
+  "description": "Place a single animated 3D model on a real surface with your iPhone's rear camera, with two ambient soundtracks. iOS only.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#fafaf9",
+  "theme_color": "#0f766e",
+  "icons": [
+    {
+      "src": "/logo.png",
+      "sizes": "any",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
